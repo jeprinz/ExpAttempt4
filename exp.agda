@@ -7,8 +7,6 @@ open import Relation.Nullary
 -- for universe levels
 open import Agda.Primitive
 
--- PROBLEMS WITH UNIVERSE LEVELS: no Level_n type.
-
 data Fin : ℕ → Set where
   Z : ∀{n} → Fin n
   S : ∀{n} → Fin n → Fin (suc n)
