@@ -59,10 +59,7 @@ mutual
       → Exp Γ (λ γ → TypeAt icx γ)
     App : {Γ : Context} → {A : ctxType Γ → Set i} → {B : ctxType (Γ , A) → Set i} →
         Exp Γ (λ γ → (a : A γ) → B (γ , a)) → (x : Exp Γ A) → Exp Γ (λ γ → B (γ , unq γ x))
-        -- TODO: compare this definition of App with old
 
-  -- unquote
--- TODO : should move γ arg to end
   unq : {Γ : Context} → (γ : ctxType Γ) → {T : ctxType Γ → Set i} → Exp Γ T → T γ
   unq γ (Lambda e) = λ x → unq (γ , x) e
   unq γ (Var icx) = proj icx γ
@@ -96,15 +93,6 @@ f1 : Exp ∅ (λ γ → (A B : Set₀) → (A → B) → A → B)
 f1 = Lambda (Lambda (Lambda (Lambda (App (Var (next same)) (Var same)))))
 -- λ A B f x . f x
 
-------------------------------------------------------------------------
-------------------------------------------------------------------------
-
-
-TypeAt' : ∀{Γ} → (icx : InCtx Γ) → (ctxType (CtxAt icx) → Set i)
-TypeAt' {(_ , T)} same = T
-TypeAt' (next icx) = TypeAt' icx
-
-
 mutual
   -- Substitution
   subΓ : ∀{Γ} → (icx : InCtx Γ) → Exp (CtxAt icx) (TypeAt' icx) → Context
@@ -125,53 +113,6 @@ subT icx e T = λ γ → T (subγ icx e γ)
 
 subExp : ∀{Γ T} → (icx : InCtx Γ) → (e : Exp (CtxAt icx) (TypeAt' icx))
   → Exp Γ T → Exp (subΓ icx e) (subT icx e T)
-commute : ∀{Γ T} → ∀(icx) → (toSub : Exp (CtxAt {Γ} icx) (TypeAt' {Γ} icx))
-  → (A : Exp Γ T)
-  → _≡_ {_} -- {(γ : ctxType (subΓ {Γ} icx toSub)) → T (subγ icx toSub γ) }
-      (λ γ → unq (subγ icx toSub γ) A) (λ γ → unq γ (subExp icx toSub A))
 
--- TODO: will need to prove that substitution commutes with unquoting
-subExp icx toSub (Lambda e) = Lambda (subExp (next icx) toSub e)
-subExp icx toSub (Π₀ {Γ} A B) = let x = subExp (next icx) toSub B
-                            -- in Π₀ (subExp icx toSub A) x
-                            in {!  subExp icx toSub A  !}
-                            -- in Π₀ {subΓ icx toSub} {! subT icx toSub (λ γ → Set)  !} x
-                              -- (subst (λ Γ → Exp (subΓ icx toSub , Γ) (λ γ → Set))
-                                -- {! commute {_} {λ γ → Set₂} icx toSub A  !} x)
-                            -- TODO: c-c c-n above!!!!!! (and look at c-c c-c)
-subExp icx toSub (Π₀₁ A A₁) = {!   !}
-subExp icx toSub (Π₁ A B) = {!   !}
-subExp icx toSub (Π₂ A B) = {!   !}
-subExp icx toSub 𝓤₀ = 𝓤₀
-subExp icx toSub 𝓤₁ = 𝓤₁
-subExp icx toSub 𝓤₂ = 𝓤₂
-subExp icx toSub (Var icx₁) = {!   !} -- split on icx and icx₁, return Var or toSub.
-subExp icx toSub (App {Γ} {A} {B} e₁ e₂) -- = {!   !}
-  = let x = subExp icx toSub e₁
-        y = subExp icx toSub e₂
-    in {!   !}
-    -- in App {subΓ icx toSub} {subT icx toSub A} {subT (next icx) toSub B}
-      -- x {!   !}
-
--- TODO: can't prove this without function extentionality!!!!!!!!!!!!!!!
-commute icx toSub (Lambda A) = let x = commute (next icx) toSub A in {!  (λ γ₂ → unq (subγ icx toSub (proj₁ γ₂) , proj₂ γ₂) A) !}
--- desired type is _≡ₐ_
--- x is _≡ₐₐ_
--- where a = (γ₁ : ctxType (subΓ icx toSub)) (x₁ : A₁ (subγ icx toSub γ₁))
---           → B (subγ icx toSub γ₁ , x₁)
--- aa = (γ₂ : Σ (ctxType (subΓ icx toSub)) (λ v → A₁ (subγ icx toSub v))) →
---           B (subγ icx toSub (proj₁ γ₂) , proj₂ γ₂)
-commute icx toSub (Π₀ A A₁) = {!   !}
-commute icx toSub (Π₀₁ A A₁) = {!   !}
-commute icx toSub (Π₁ A A₁) = {!   !}
-commute icx toSub (Π₂ A A₁) = {!   !}
-commute icx toSub 𝓤₀ = refl
-commute icx toSub 𝓤₁ = refl
-commute icx toSub 𝓤₂ = refl
-commute icx toSub (Var icx₁) = {!   !}
-commute icx toSub (App A A₁) = {!   !}
-
-data _↦_ : ∀{Γ T} → Exp Γ T → Exp Γ T → Set j where
-  APP : {Γ : Context} → {A : ctxType Γ → Set i} → {B : (γ : ctxType Γ) → A γ → Set i} →
-      (e e' : Exp Γ (λ γ → (a : A γ) → B γ a)) → e ↦ e'
-      → (e₂ : Exp Γ A) → App e e₂ ↦ App e' e₂
+------------------------------------------------------------------------
+------------------------------------------------------------------------
